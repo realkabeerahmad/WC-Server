@@ -2,16 +2,16 @@
 const mongoose = require("mongoose");
 // Cart Schema
 const CartSchema = mongoose.Schema({
-  userId: String,
+  user:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "users",
+  },
   products: [
     {
-      _id: String,
-      name: String,
-      Image: String,
-      price: Number,
-      quantity: Number,
-      createdAt: { type: Date, default: Date.now },
-      default: [],
+      product:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "users",
+      },
     },
   ],
   createdAt: { type: Date, default: Date.now },

@@ -49,7 +49,7 @@ router.post("/register", (req, res) => {
           name: firstName + " " + lastName,
           email,
           password,
-          Image: "https://i.ibb.co/Lk9vMV2/newUser.png",
+          image: "https://i.ibb.co/Lk9vMV2/newUser.png",
         });
         // Hashing users password
         bcrypt.hash(user.password, salt, null, async (err, hash) => {
@@ -62,7 +62,8 @@ router.post("/register", (req, res) => {
           await user
             .save()
             .then((result) => {
-              SendOtpVerificationEmail(result, res);
+              // SendOtpVerificationEmail(result, res);
+              res.status(200).send({ status: "success", message: "User Registered Successfully. Please Login" })
             })
             .catch(() => {
               res.json({ status: "failed", message: "Unable to Registered" });
@@ -79,20 +80,18 @@ router.post("/register", (req, res) => {
 router.post("/showUser", (req, res) => {
   const { _id } = req.body;
   try {
-    User.findById({ _id }, (err, user) => {
-      if (user) {
-        res.status(200).send({
-          status: "success",
-          message: "User updated successfully",
-          user: user,
-        });
-      } else {
-        res.status(200).send({
-          status: "failed",
-          message: "User not updated",
-        });
-      }
-    });
+    User.findById({ _id }).populate({ path: "cart.product" }).then(user => {
+      res.status(200).send({
+        status: "success",
+        message: "User found successfully",
+        user: user,
+      });
+    }).catch(err => {
+      res.status(200).send({
+        status: "failed",
+        message: "User not Found",
+      });
+    })
   } catch (error) {
     res.json({ status: "failed", error: error.message });
   }
@@ -340,5 +339,73 @@ const SendOtpVerificationEmail = async ({ _id, email }, res) => {
   }
 };
 
-// Expoting Routes
+
+router.post("/cart/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { product, quantity } = req.body;
+    const user = await User.findById(id);
+    const existingCartItem = user.cart.find(
+      (item) => item.product === product
+    );
+    if (existingCartItem) {
+      // The product is already in the cart, update the quantity
+      existingCartItem.quantity += quantity || 1;
+      await user.save();
+      res.json(user.cart);
+    } else {
+      // The product is not in the cart, add a new item
+      user.cart.push({ product, quantity });
+      await user.save();
+      res.status(201).json(user.cart);
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+
+// READ - Get all items in the cart
+router.get("/cart/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id).populate("cart.product");
+    res.json(user.cart);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+// UPDATE - Update a specific item in the cart
+router.patch("/cart/:id/:cartItemId", async (req, res) => {
+  try {
+    const { id, cartItemId } = req.params;
+    const { quantity } = req.body;
+    const user = await User.findById(id);
+    const cartItem = user.cart.id(cartItemId);
+    cartItem.quantity = quantity;
+    await user.save();
+    res.json(user.cart);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+// DELETE - Delete a specific item from the cart
+router.delete("/cart/:id/:cartItemId", async (req, res) => {
+  try {
+    const { id, cartItemId } = req.params;
+    const user = await User.findById(id);
+    user.cart.id(cartItemId).remove();
+    await user.save();
+    res.json(user.cart);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
 module.exports = router;

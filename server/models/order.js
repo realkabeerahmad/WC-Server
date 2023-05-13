@@ -13,13 +13,12 @@ const OrderSchema = mongoose.Schema({
   TrackingService: { type: String, default: "TCS" },
   products: [
     {
-      _id: String,
-      name: String,
-      Image: String,
-      price: Number,
-      quantity: Number,
-      createdAt: { type: Date, default: Date.now },
-    },
+      product: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "products",
+      },
+      quantity: { type: Number, default: 1 }
+    }
   ],
   createdAt: { type: Date, default: Date.now },
 });

@@ -11,10 +11,13 @@ const ProductSchema = mongoose.Schema({
   Return: { type: String, default: "N/A" },
   StandardShipping: { type: String, default: "N/A" },
   FastShipping: { type: String, default: "N/A" },
-  Image: String,
+  image: String,
   rating: [
     {
-      userId: String,
+      user:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "users",
+      },
       value: Number,
     },
   ],

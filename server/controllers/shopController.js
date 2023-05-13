@@ -42,7 +42,7 @@ router.post("/add", async (req, res) => {
     Return: req.body.Return,
     StandardShipping: req.body.StandardShipping,
     FastShipping: req.body.FastShipping,
-    Image: req.body.Image,
+    image: req.body.Image,
   };
   try {
     const Product = new product(obj);
@@ -62,8 +62,9 @@ router.post("/add", async (req, res) => {
   }
 });
 // Add a Product
-router.post("/edit", async (req, res) => {
-  const { _id, quantity } = req.body;
+router.put("/edit:_id", async (req, res) => {
+  const { _id } = req.params;
+  const { quantity } = req.body;
   try {
     product
       .findByIdAndUpdate({ _id: _id }, { $inc: { quantity: quantity } })
@@ -81,11 +82,9 @@ router.post("/edit", async (req, res) => {
 // View a Product
 router.get("/show:_id", (req, res) => {
   const { _id } = req.params;
-  // console.log(_id);
   try {
     product
-      .findById({ _id: _id })
-      .then((data) => {
+      .findById({ _id: _id }).populate({ path: "rating.user", select: "_id name Image" }).then((data) => {
         res.status(200).send({ status: "success", data: data });
       })
       .catch((err) => {
@@ -177,7 +176,7 @@ router.post("/rate", (req, res) => {
   const { _id, userId, value } = req.body;
   try {
     product
-      .find({ _id: _id, rating: { $elemMatch: { userId: userId } } })
+      .find({ _id: _id, rating: { $elemMatch: { user: userId } } })
       .then((p) => {
         if (p.length <= 0) {
           product
@@ -185,12 +184,12 @@ router.post("/rate", (req, res) => {
               { _id: _id },
               {
                 $push: {
-                  rating: { userId: userId, value: value },
+                  rating: { user: userId, value: value },
                 },
               }
             )
             .then(async () => {
-              const data = await product.findById({ _id: _id });
+              const data = await product.findById({ _id: _id }).populate({ path: "rating.user", select: "_id name Image" });
               res.send({
                 status: "success",
                 message: "Rating Added",
@@ -203,7 +202,7 @@ router.post("/rate", (req, res) => {
         } else {
           product
             .findOneAndUpdate(
-              { _id: _id, rating: { $elemMatch: { userId: userId } } },
+              { _id: _id, rating: { $elemMatch: { user: userId } } },
               {
                 $set: {
                   "rating.$.value": value,
@@ -211,7 +210,7 @@ router.post("/rate", (req, res) => {
               }
             )
             .then(async () => {
-              const data = await product.findById({ _id: _id });
+              const data = await product.findById({ _id: _id }).populate({ path: "rating.user", select: "_id name Image" });
               res.send({
                 status: "success",
                 message: "Rating Updated",
@@ -251,7 +250,6 @@ router.delete("/delete:_id", (req, res) => {
 // Create Cart
 router.post("/cart/new", (req, res) => {
   const { userId } = req.body;
-  // console.log(req.body);
   try {
     cart.findOne({ userId: userId }, async (err, data) => {
       if (data) {
@@ -352,7 +350,7 @@ router.post("/cart/add", (req, res) => {
                   products: {
                     _id: _id,
                     name: name,
-                    Image: image,
+                    image: image,
                     price: price,
                     quantity: quantity,
                   },
@@ -481,7 +479,7 @@ router.post("/checkOut", async (req, res) => {
       .catch((err) => {
         res.send({ status: failed, message: "Order not placed" });
       });
-  } catch (error) {}
+  } catch (error) { }
 });
 
 // Show User Orders
@@ -614,7 +612,7 @@ router.post("/wish", async (req, res) => {
             // { new: true },
             {
               $push: {
-                product_wish: { _id: p._id, name: p.name, image: p.Image },
+                product_wish: { _id: p._id, name: p.name, image: p.image },
               },
             }
           )

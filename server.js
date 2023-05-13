@@ -17,17 +17,7 @@ const path = require("path");
 const userRoutes = require("./server/controllers/userController");
 
 // Impoting Pet Routes
-const petRoutes = require("./server/controllers/petController");
-
-// Impoting Pet Routes
 const shopRoutes = require("./server/controllers/shopController");
-
-// Impoting Adoption Pet Routes
-const petAdoptionRoutes = require("./server/controllers/petAdoptionController");
-
-// Impoting Community Routes
-const communityRoutes = require("./server/controllers/communityController");
-// const { uploadFile } = require("./server/config/firebase");
 
 //Setting Up Envionment Variables
 dotenv.config();
@@ -60,14 +50,8 @@ app.get("/", (req, res) => {
 });
 
 app.use("/auth", userRoutes);
-
-app.use("/pet", petRoutes);
-
 app.use("/shop", shopRoutes);
 
-app.use("/adoption", petAdoptionRoutes);
-
-app.use("/community", communityRoutes);
 
 const Port = process.env.PORT || 8000;
 // Starting Server
