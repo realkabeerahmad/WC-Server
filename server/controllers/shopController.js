@@ -35,8 +35,12 @@ router.post("/add", async (req, res) => {
   var obj = {
     name: req.body.name,
     category: req.body.category,
+    sub_category: req.body.sub_category,
     quantity: req.body.quantity,
     price: req.body.price,
+    color: req.body.color,
+    size: req.body.size,
+    brand: req.body.brand,
     description: req.body.description,
     Warranty: req.body.Warranty,
     Return: req.body.Return,
@@ -84,7 +88,9 @@ router.get("/show:_id", (req, res) => {
   const { _id } = req.params;
   try {
     product
-      .findById({ _id: _id }).populate({ path: "rating.user", select: "_id name Image" }).then((data) => {
+      .findById({ _id: _id })
+      .populate({ path: "rating.user", select: "_id name Image" })
+      .then((data) => {
         res.status(200).send({ status: "success", data: data });
       })
       .catch((err) => {
@@ -106,6 +112,45 @@ router.get("/show/all", (req, res) => {
         // throw Error("Products not found");
       }
     });
+  } catch (error) {
+    res.send({ status: "failed", message: error.message });
+  }
+});
+
+router.post("/show", (req, res) => {
+  try {
+    product
+      .find({
+        category: req.body.category,
+        sub_category: req.body.sub_category,
+      })
+      .sort({ createdAt: -1 })
+      .then((data) => {
+        if (data.length > 0)
+          res.status(200).send({ status: "success", products: data });
+        else res.status(200).send({ status: "failed", products: [] });
+      })
+      .catch((err) => {
+        res.status(200).send({ status: "failed", message: "Error Occured" });
+      });
+  } catch (error) {
+    res.send({ status: "failed", message: error.message });
+  }
+});
+
+router.get("/show/:brand", (req, res) => {
+  try {
+    product
+      .find({ brand: req.params.brand })
+      .sort({ createdAt: -1 })
+      .then((data) => {
+        if (data.length > 0)
+          res.status(200).send({ status: "success", products: data });
+        else res.status(200).send({ status: "failed", products: [] });
+      })
+      .catch((err) => {
+        res.status(200).send({ status: "failed", message: "Error Occured" });
+      });
   } catch (error) {
     res.send({ status: "failed", message: error.message });
   }
@@ -173,7 +218,7 @@ router.post("/filter", (req, res) => {
 
 // Rate a Product
 router.post("/rate", (req, res) => {
-  const { _id, userId, value } = req.body;
+  const { _id, userId, value, description } = req.body;
   try {
     product
       .find({ _id: _id, rating: { $elemMatch: { user: userId } } })
@@ -184,12 +229,18 @@ router.post("/rate", (req, res) => {
               { _id: _id },
               {
                 $push: {
-                  rating: { user: userId, value: value },
+                  rating: {
+                    user: userId,
+                    value: value,
+                    description: description,
+                  },
                 },
               }
             )
             .then(async () => {
-              const data = await product.findById({ _id: _id }).populate({ path: "rating.user", select: "_id name Image" });
+              const data = await product
+                .findById({ _id: _id })
+                .populate({ path: "rating.user", select: "_id name Image" });
               res.send({
                 status: "success",
                 message: "Rating Added",
@@ -210,7 +261,9 @@ router.post("/rate", (req, res) => {
               }
             )
             .then(async () => {
-              const data = await product.findById({ _id: _id }).populate({ path: "rating.user", select: "_id name Image" });
+              const data = await product
+                .findById({ _id: _id })
+                .populate({ path: "rating.user", select: "_id name Image" });
               res.send({
                 status: "success",
                 message: "Rating Updated",
@@ -479,7 +532,7 @@ router.post("/checkOut", async (req, res) => {
       .catch((err) => {
         res.send({ status: failed, message: "Order not placed" });
       });
-  } catch (error) { }
+  } catch (error) {}
 });
 
 // Show User Orders

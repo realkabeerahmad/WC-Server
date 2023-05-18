@@ -31,6 +31,55 @@ const cart = require("../models/cart");
 const uploadFile = require("../config/firebase");
 
 // Register route for Creating a new user
+router.post("/add", (req, res) => {
+  // Getting all required data from request body
+  var { name, email, role } = req.body;
+  // Generating Salt using genSaltSync function with 10 rounds
+  const salt = bcrypt.genSaltSync(10);
+  // Check if email already exist in DB
+  try {
+    User.findOne({ email: email }, (err, user) => {
+      if (user) {
+        res.json({ status: "failed", message: "User Already Exist" });
+      } else if (err) {
+        res.json({ status: "failed", message: "Server Error" });
+      } else {
+        // Creating a user object to save in database
+        const user = new User({
+          name: name,
+          email,
+          password: "Temp/123",
+          image: "https://i.ibb.co/Lk9vMV2/newUser.png",
+          role: role,
+        });
+        // Hashing users password
+        bcrypt.hash(user.password, salt, null, async (err, hash) => {
+          if (err) {
+            throw Error(err.message);
+          }
+          // Storing HASH Password in user object
+          user.password = hash;
+          // Storing user in our Database
+          await user
+            .save()
+            .then((result) => {
+              // SendOtpVerificationEmail(result, res);
+              res.status(200).send({
+                status: "success",
+                message: "User Registered Successfully. Please Login",
+              });
+            })
+            .catch(() => {
+              res.json({ status: "failed", message: "Unable to Registered" });
+            });
+        });
+      }
+    });
+  } catch (error) {
+    res.json({ status: "failed", message: error.message });
+  }
+});
+// Register route for Creating a new user
 router.post("/register", (req, res) => {
   // Getting all required data from request body
   var { firstName, lastName, email, password } = req.body;
@@ -63,7 +112,10 @@ router.post("/register", (req, res) => {
             .save()
             .then((result) => {
               // SendOtpVerificationEmail(result, res);
-              res.status(200).send({ status: "success", message: "User Registered Successfully. Please Login" })
+              res.status(200).send({
+                status: "success",
+                message: "User Registered Successfully. Please Login",
+              });
             })
             .catch(() => {
               res.json({ status: "failed", message: "Unable to Registered" });
@@ -80,18 +132,21 @@ router.post("/register", (req, res) => {
 router.post("/showUser", (req, res) => {
   const { _id } = req.body;
   try {
-    User.findById({ _id }).populate({ path: "cart.product" }).then(user => {
-      res.status(200).send({
-        status: "success",
-        message: "User found successfully",
-        user: user,
+    User.findById({ _id })
+      .populate({ path: "cart.product" })
+      .then((user) => {
+        res.status(200).send({
+          status: "success",
+          message: "User found successfully",
+          user: user,
+        });
+      })
+      .catch((err) => {
+        res.status(200).send({
+          status: "failed",
+          message: "User not Found",
+        });
       });
-    }).catch(err => {
-      res.status(200).send({
-        status: "failed",
-        message: "User not Found",
-      });
-    })
   } catch (error) {
     res.json({ status: "failed", error: error.message });
   }
@@ -100,20 +155,21 @@ router.post("/showUser", (req, res) => {
 // Show All Users route
 router.get("/showAllUser", (req, res) => {
   try {
-    User.find({}, (err, users) => {
-      if (users) {
+    User.find({})
+      .sort({ createdAt: -1 })
+      .then((users) => {
         res.status(200).send({
           status: "success",
           message: "All Users sent successfully",
           users: users,
         });
-      } else {
+      })
+      .catch((err) => {
         res.status(200).send({
           status: "failed",
           message: "User not updated",
         });
-      }
-    });
+      });
   } catch (error) {
     res.json({ status: "failed", error: error.message });
   }
@@ -339,15 +395,12 @@ const SendOtpVerificationEmail = async ({ _id, email }, res) => {
   }
 };
 
-
 router.post("/cart/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { product, quantity } = req.body;
     const user = await User.findById(id);
-    const existingCartItem = user.cart.find(
-      (item) => item.product === product
-    );
+    const existingCartItem = user.cart.find((item) => item.product === product);
     if (existingCartItem) {
       // The product is already in the cart, update the quantity
       existingCartItem.quantity += quantity || 1;
@@ -364,7 +417,6 @@ router.post("/cart/:id", async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
-
 
 // READ - Get all items in the cart
 router.get("/cart/:id", async (req, res) => {

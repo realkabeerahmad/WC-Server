@@ -4,9 +4,13 @@ const mongoose = require("mongoose");
 const ProductSchema = mongoose.Schema({
   name: { type: String, index: true },
   category: { type: String, index: true },
+  sub_category: { type: String, index: true },
   quantity: Number,
   price: Number,
   description: String,
+  color:{ type: String, default: "N/A" },
+  sizes:{ type: String, default: "N/A" },
+  brand:{ type: String, default: "N/A" },
   Warranty: { type: String, default: "N/A" },
   Return: { type: String, default: "N/A" },
   StandardShipping: { type: String, default: "N/A" },
@@ -19,6 +23,7 @@ const ProductSchema = mongoose.Schema({
         ref: "users",
       },
       value: Number,
+      description:String
     },
   ],
   totalRating: { type: Number, default: 0 },

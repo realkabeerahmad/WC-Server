@@ -45,7 +45,7 @@ app.use(express.static(path.join(__dirname + "/Assets")));
 
 app.get("/", (req, res) => {
   res.send(
-    "<div style><h1>PETHUB.com</h1><p>Hello this is pethub.com api please refer to the API documentation for details</p>"
+    "<div style><h1>VF.io</h1><p>Hello this is VF.io api please refer to the API documentation for details</p>"
   );
 });
 

@@ -10,7 +10,7 @@ const UserSchema = mongoose.Schema({
   password: { type: String, required: true },
   verified: { type: Boolean, default: true },
   image: { type: String },
-  isAdmin: { type: Boolean, default: false },
+  role: { type: String, default: "user" },
   createdAt: { type: Date, default: Date.now },
   wishList: [{
     product: {
