@@ -116,6 +116,7 @@ router.get("/show/all", (req, res) => {
     res.send({ status: "failed", message: error.message });
   }
 });
+// Update this end point please
 // View all Products
 router.get("/show/brand/:brand", (req, res) => {
   try {
