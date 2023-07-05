@@ -29,7 +29,29 @@ const Upload = require("../config/multer");
 const cart = require("../models/cart");
 
 const uploadFile = require("../config/firebase");
-
+router.post("/reset", (req, res) => {
+  const { email, password } = req.body;
+  const salt = bcrypt.genSaltSync(10);
+  User.findOne({ email: email }, (err, user) => {
+    if (user) {
+      bcrypt.hash(password, salt, null, async (err, hash) => {
+        if (err) {
+          throw Error(err.message);
+        }
+        await User.findByIdAndUpdate({ _id: user._id }, { password: hash })
+          .then((user) => {
+            res.status(200).send({
+              status: "success",
+              message: "Password Updated Successfully. Please Login",
+            });
+          })
+          .catch((err) => {
+            res.json({ status: "failed", message: "Unable to Registered" });
+          });
+      });
+    }
+  });
+});
 // Register route for Creating a new user
 router.post("/add", (req, res) => {
   // Getting all required data from request body

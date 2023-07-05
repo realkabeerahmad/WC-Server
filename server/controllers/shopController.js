@@ -116,6 +116,21 @@ router.get("/show/all", (req, res) => {
     res.send({ status: "failed", message: error.message });
   }
 });
+// View all Products
+router.get("/show/brand/:brand", (req, res) => {
+  try {
+    product.find({ brand: req.params.brand }, (err, data) => {
+      if (data) {
+        res.status(200).send({ status: "success", products: data });
+      } else {
+        res.status(200).send({ status: "failed", products: [] });
+        // throw Error("Products not found");
+      }
+    });
+  } catch (error) {
+    res.send({ status: "failed", message: error.message });
+  }
+});
 
 router.post("/show", (req, res) => {
   try {
@@ -488,46 +503,13 @@ router.post("/checkOut", async (req, res) => {
   const obj = req.body;
   // console.log(obj);
   try {
-    for (let i = 0; i < obj.products.length; i++) {
-      const _id = obj.products[i]._id;
-      const quantity = obj.products[i].quantity;
-      product
-        .findById({ _id: _id }, (err, data) => {
-          if (data) {
-            var newQuan = { quantity: data.quantity - quantity };
-            var NumberSold = { NumberSold: data.NumberSold + quantity };
-            product
-              .findByIdAndUpdate(
-                { _id: _id },
-                {
-                  quantity: newQuan.quantity,
-                  NumberSold: NumberSold.NumberSold,
-                }
-              )
-              .then(() => {
-                // console.log("done");
-              })
-              .catch((err) => {
-                // console.log(err, "Not Done");
-              });
-          }
-        })
-        .clone();
-    }
     const Order = new order(obj);
     await Order.save()
       .then(() => {
-        cart
-          .findByIdAndUpdate({ _id: obj.cartId }, { products: [] })
-          .then(() => {
-            res.send({
-              status: "success",
-              message: "Order placed successfully",
-            });
-          })
-          .catch((err) => {
-            res.send({ status: failed, message: "Order not placed" });
-          });
+        res.send({
+          status: "success",
+          message: "Order placed successfully",
+        });
       })
       .catch((err) => {
         res.send({ status: failed, message: "Order not placed" });
@@ -540,7 +522,8 @@ router.post("/order/show/user", (req, res) => {
   const { userId } = req.body;
   order
     .find({ userId: userId })
-    .sort({ createdAt: -1 })
+    .populate("products.product")
+    // .sort({ createdAt: -1 })
     .then((data) => {
       res.send({
         status: "success",
@@ -552,7 +535,6 @@ router.post("/order/show/user", (req, res) => {
       res.send({
         status: "failed",
         message: "No Orders data fetched",
-        // orders: data,
       });
     });
 });
@@ -561,7 +543,7 @@ router.post("/order/show/user", (req, res) => {
 router.get("/order/show", (req, res) => {
   order
     .find({})
-    .sort({ createdAt: -1 })
+    .populate("products.product")
     .then((data) => {
       res.send({
         status: "success",

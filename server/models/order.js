@@ -15,10 +15,11 @@ const OrderSchema = mongoose.Schema({
     {
       product: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "products",
+        ref: "product",
       },
-      quantity: { type: Number, default: 1 }
-    }
+      quantity: { type: Number, default: 1 },
+      price: { type: Number },
+    },
   ],
   createdAt: { type: Date, default: Date.now },
 });
